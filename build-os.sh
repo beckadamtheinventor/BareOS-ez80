@@ -9,4 +9,4 @@ mkdir "bin" || echo ""
 echo "compiling to $name"
 ~/CEdev/bin/fasmg src/main.asm bin/$name
 
-read -p "Finished. Press any key to exit"
+read -p "Finished. Press any key to complete"
