@@ -1,0 +1,3 @@
+[submodule "open-ce"]
+	path = open-ce
+	url = https://github.com/beckadamtheinventor/open-ce.git
