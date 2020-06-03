@@ -23,6 +23,7 @@ testIsOpenCE:
 	pop bc,bc
 	ret
 bootOpenCEOS:
+	call fs_build_VAT
 OSMain:
 	ld bc,$FF
 	ld (oce.textColors),bc
@@ -53,6 +54,15 @@ OSMain:
 	call get_user_input
 	pop bc,bc
 	jq OSMain
+
+ErrorHandler:
+	ld bc,$80FF
+	ld (oce.textColors),bc
+	lea hl,iy
+	call oce.putSAndNewLine
+	call oce.blitBuffer
+	jp oce.waitKeyCycle
+
 
 clearScreenHomeUpStatusBar:
 	ld a,$FF

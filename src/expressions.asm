@@ -110,6 +110,42 @@ get_user_input:
 	jr .setmap
 
 
+process_command:
+	ld hl,3
+	add hl,sp
+	ld de,(hl)
+	push de
+	call .skipword
+	xor a,a
+	ld (de),a
+	inc de
+	push de
+	ld de,sys_exec_arguments
+	push de
+	call ti._strcpy
+	pop bc
+	pop bc
+	call fs_execute_file
+	pop bc
+	pop bc
+	ret
+.skipword:
+	ld a,(de)
+	inc de
+	cp a,$5F
+	jr z,.skipword
+	cp a,$41
+	ret c
+	cp a,$5B
+	jr c,.skipword
+	cp a,$7B
+	ret nc
+	cp a,$61
+	jr nc,.skipword
+	ret
+
+
+
 process_expression:
 	ld hl,-9
 	call ti._frameset
@@ -139,6 +175,7 @@ process_expression:
 	inc bc
 	ld (ix-3),bc
 	ld a,(hl)
+	sub a,$30
 	call .numberentry
 	ld a,(ix-7)
 	
@@ -146,15 +183,21 @@ process_expression:
 .number:
 	inc bc
 	ld (ix-3),bc
-.numberentry:
 	sub a,$30
-	ld a,(ix-9)
-	ld bc,(ix-6)
-	ld e,$43
-	ld hl,$A80000
-	ld (ix-9),a
-	ld (ix-6),bc
+	call .numberentry
 	jq .main_loop
+.numberentry:
+	ld e,(ix-9)
+	ld hl,(ix-6)
+	push af
+	xor a,a
+	ld bc,10
+	call ti._lmulu
+	pop af
+	call ti._ladd_b
+	ld (ix-9),e
+	ld (ix-6),hl
+	ret
 .exit:
 	ld sp,ix
 	pop ix
