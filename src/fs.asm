@@ -24,7 +24,7 @@ fs_build_VAT:
 	sbc hl,hl
 	ld (ScrapMem),hl
 	ld a,(fs_flash_ptr)
-	ld (ScrapMem),a
+	ld (ScrapMem+2),a
 	ld hl,(ScrapMem)
 	call .loop
 	ld (fs_VAT_ptr),ix
@@ -32,6 +32,8 @@ fs_build_VAT:
 	ret
 .loop:
 	ld a,(hl)
+	cp a,$FF
+	ret z    ;if flag byte = $FF, there are no more user files to account for
 	bit fs_exists_bit,a
 	jr z,.dont_count
 	ld a,fs_exists_bit

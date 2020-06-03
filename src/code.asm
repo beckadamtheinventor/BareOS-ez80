@@ -53,6 +53,7 @@ OSMain:
 	call oce.waitKeyCycle
 	cp a,9
 	jr nz,OSMain
+	call ti.boot.TurnOffHardware
 	rst 0
 .getuserinput:
 	ld bc,64
