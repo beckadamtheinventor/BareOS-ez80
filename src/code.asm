@@ -4,9 +4,9 @@ interruptHandler:
 	pop hl
 ; acknowledge interrupt
 	ld hl, $F00014
-	ld hl, (bc)
+	ld bc, (hl)
 	ld l, $F00008 and $FF
-	ld (bc), hl
+	ld (hl), bc
 	pop iy
 	pop ix
 	exx
