@@ -1,10 +1,18 @@
 
 interruptHandler:
+; in current state of openCE, this is needed (extra push from boot)
+	pop hl
+; acknowledge interrupt
+	ld hl, $F00014
+	ld hl, (bc)
+	ld l, $F00008 and $FF
+	ld (bc), hl
 	pop iy
 	pop ix
 	exx
 	ex af,af'
-	retn
+	ei
+	ret
 rst10Handler:
 rst18Handler:
 rst20Handler:
