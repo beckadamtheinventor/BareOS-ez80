@@ -1,11 +1,11 @@
 
 
 get_user_input:
-	ld hl,-5
+	ld hl,-4
 	call ti._frameset
 	xor a,a
 	sbc hl,hl
-	ld (ix-7),hl
+	ld (ix-3),hl
 	ld (ix-4),a
 	ld hl,(ix+6)
 	ld (hl),a
@@ -54,18 +54,17 @@ get_user_input:
 	ld c,a
 	add hl,bc
 	ex hl,de
-	ld hl,(ix-7)
+	ld hl,(ix-3)
 	ld bc,(ix+9)
 	or a,a
 	inc hl
 	sbc hl,bc
-	add hl,bc
-	ex hl,de
 	jq nc,.keys
-	ld (ix-7),de
-	dec de
-	ld a,(hl)
-	ld hl,(ix+6)
+	add hl,bc
+	ld (ix-3),hl
+	dec hl
+	ld a,(de)
+	ld bc,(ix+6)
 	add hl,bc
 	ld (hl),a
 	inc hl
@@ -73,15 +72,15 @@ get_user_input:
 	jq .draw
 .delete:
 	ld hl,(ix+6)
-	ld bc,(ix-7)
+	ld bc,(ix-3)
 	dec bc
-	ld a,(ix-5)
+	ld a,(ix-1)
 	or a,b
 	or a,c
 	jq z,.draw
 	add hl,bc
 	ld (hl),0
-	ld (ix-7),bc
+	ld (ix-3),bc
 	jq .draw
 .enter:
 	or a,a
