@@ -28,10 +28,14 @@ testIsOpenCE:
 	ld bc,string_OpenCE_bootcode
 	push bc
 	call ti._strcmp
+	xor a,a
+	or a,l
 	pop bc,bc
 	ret
 bootOpenCEOS:
 	call fs_build_VAT
+	ld hl,fs_temp_name_start
+	ld (fs_temp_name_ptr),hl
 OSMain:
 	ld bc,$FF
 	ld (oce.textColors),bc
@@ -42,7 +46,7 @@ OSMain:
 .keys:
 	call oce.waitKeyCycle
 	cp a,9
-	jq z,.getuserinput
+	jq z,.console
 	cp a,15
 	jr nz,.keys
 	call clearScreenHomeUpStatusBar
@@ -55,22 +59,47 @@ OSMain:
 	jr nz,OSMain
 	call ti.boot.TurnOffHardware
 	rst 0
-.getuserinput:
+.console:
+	call console
+	jq OSMain
+console:
 	ld bc,64
 	push bc
 	ld bc,tempMem
 	push bc
 	call get_user_input
-	pop bc,bc
-	jq OSMain
+	call nextLine
+	pop hl
+	pop bc
+	ld a,(hl)
+	or a,a
+	ret z
+	push hl
+	call process_command
+	pop bc
+	jq console
+
+
+nextLine:
+	ld a,(ti.curRow)
+	cp a,20
+	jq nc,scrollText
+	inc a
+	ld (ti.curRow),a
+	ret
+
+scrollText:
+	ld de,vRamBuffer+320*18
+	ld hl,vRamBuffer+320*28
+	ld bc,320*(240-28)
+	ldir
+	ret
 
 ErrorHandler:
 	ld bc,$80FF
 	ld (oce.textColors),bc
-	lea hl,iy
 	call oce.putSAndNewLine
-	call oce.blitBuffer
-	jp oce.waitKeyCycle
+	jp oce.blitBuffer
 
 
 clearScreenHomeUpStatusBar:

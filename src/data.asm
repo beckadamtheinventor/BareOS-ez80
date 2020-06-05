@@ -3,7 +3,8 @@ execMem             :=  $D1A881
 tempMem             :=  $D03000
 ScrapMem            :=  $D0017C
 sys_exec_arguments  :=  $D00800
-
+vRam                :=  $D40000
+vRamBuffer          :=  $D52C00
 
 _keymaps:
 	dl _keymap_A,_keymap_a,_keymap_1,0
@@ -25,15 +26,24 @@ string_OpenCE_bootcode:
 	db "OpenCE bootcode",0
 string_invalid_executable:
 	db "Invalid executable format",0
+string_file_not_found:
+	db "File not found.",0
+string_invalid_sys:
+	db "Invalid SYS executable.",0
+string_file_not_executable:
+	db "File is not executable.",0
 
 system_files:
 sys_file_1:
 	db fs_system_bit+fs_executable_bit+fs_exists_bit
 	dl .len
-	db "RMF",0
+	db "RM",0
 .data:
-	db $EF,$7B
+	db "SYS"
 	ld hl,sys_exec_arguments
+	ld a,(hl)
+	or a,a
+	jq z,.fail_no_args
 	push hl
 .loop:
 	call ti._strlen
@@ -43,6 +53,7 @@ sys_file_1:
 	jr z,.exit
 	push hl
 	ld a,' '
+	ld bc,0
 	cpir
 	xor a,a
 	ld (hl),a
@@ -54,6 +65,13 @@ sys_file_1:
 .exit:
 	xor a,a
 	ret
+.fail_no_args:
+	ld hl,.string_help
+	call oce.putSAndNewLine
+	xor a,a
+	ret
+.string_help:
+	db "RM FILE [...]",0
 .len:=$-.data
 
 sys_file_2:
@@ -61,11 +79,17 @@ sys_file_2:
 	dl .len
 	db "MKF",0
 .data:
-	db $EF,$7B
+	db "SYS"
 	ld hl,sys_exec_arguments
+	ld a,(hl)
+	or a,a
+	jq z,.fail_no_args
 	push hl
 .loop:
 	call ti._strlen
+	add hl,bc
+	or a,a
+	sbc hl,bc
 	push hl
 	pop bc
 	pop hl
@@ -75,13 +99,118 @@ sys_file_2:
 	cpir
 	xor a,a
 	ld (hl),a
+	inc hl
 	ex (sp),hl
 	push hl
 	call fs_create_file
 	pop hl
 	jr .loop
 .exit:
+	pop hl
 	xor a,a
 	ret
+.fail_no_args:
+	ld hl,.string_help
+	call oce.putSAndNewLine
+	xor a,a
+	ret
+.string_help:
+	db "MKF FILE [...]",0
 .len:=$-.data
+
+sys_file_3:
+	db fs_system_bit+fs_executable_bit+fs_exists_bit
+	dl .len
+	db "APP",0
+.data:
+	db "SYS"
+	ld hl,sys_exec_arguments
+	ld a,(hl)
+	or a,a
+	jq z,.fail_no_args
+	push hl
+	call ti._strlen
+	add hl,bc
+	or a,a
+	sbc hl,bc
+	push hl
+	pop bc
+	pop hl
+	jr z,.exit
+	ld ($D00000),hl ;file name
+	ld a,' '
+	cpir
+	xor a,a
+	ld (hl),a
+	inc hl
+	push hl ;data to write
+	call ti._strlen
+	pop bc
+	push hl
+	push bc
+	ld bc,($D00000)
+	push bc
+	call fs_append_file
+	pop bc,bc,bc
+.exit:
+	xor a,a
+	ret
+.fail_no_args:
+	ld hl,.string_help
+	call oce.putSAndNewLine
+	xor a,a
+	ret
+.string_help:
+	db "APP FILE DATA",0
+.len:=$-.data
+
+sys_file_4:
+	db fs_system_bit+fs_executable_bit+fs_exists_bit
+	dl .len
+	db "WRT",0
+.data:
+	db "SYS"
+	ld hl,sys_exec_arguments
+	ld a,(hl)
+	or a,a
+	jq z,.fail_no_args
+	push hl
+	call ti._strlen
+	add hl,bc
+	or a,a
+	sbc hl,bc
+	push hl
+	pop bc
+	pop hl
+	jr z,.exit
+	ld ($D00000),hl
+	ld a,' '
+	cpir
+	xor a,a
+	ld (hl),a
+	inc hl
+	push hl
+	call ti._strlen
+	pop bc
+	push hl
+	push bc
+	ld bc,($D00000)
+	push bc
+	call fs_write_file
+	pop bc,bc,bc
+.exit:
+	xor a,a
+	ret
+.fail_no_args:
+	ld hl,.string_help
+	call oce.putSAndNewLine
+	xor a,a
+	ret
+.string_help:
+	db "WRT FILE DATA",0
+.len:=$-.data
+
 	db $FF
+
+
+

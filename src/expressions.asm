@@ -1,7 +1,7 @@
 
 
 get_user_input:
-	ld hl,-4
+	ld hl,-5
 	call ti._frameset
 	xor a,a
 	sbc hl,hl
@@ -14,10 +14,17 @@ get_user_input:
 	inc de
 	ld bc,(ix+9)
 	ldir
+	ld a,(ti.curRow)
+	ld (ix-5),a
+	jr .entry
 .draw:
-	call clearScreenHomeUpStatusBar
-	ld a,$FF
-	ld (oce.textColors),a
+	ld a,(ix-5)
+	ld (ti.curRow),a
+.entry:
+	xor a,a
+	ld (ti.curCol),a
+	ld bc,$FF
+	ld (oce.textColors),bc
 	ld hl,(ix+6)
 	call oce.putS
 	ld a,7
@@ -27,6 +34,10 @@ get_user_input:
 	ld c,(ix-4)
 	add hl,bc
 	ld a,(hl)
+	call oce.putC
+	ld a,$FF
+	ld (oce.textColors),a
+	ld a,' '
 	call oce.putC
 	call oce.blitBuffer
 .keys:
@@ -73,20 +84,25 @@ get_user_input:
 .delete:
 	ld hl,(ix+6)
 	ld bc,(ix-3)
-	dec bc
 	ld a,(ix-1)
 	or a,b
 	or a,c
 	jq z,.draw
+	dec bc
 	add hl,bc
 	ld (hl),0
 	ld (ix-3),bc
 	jq .draw
 .enter:
-	or a,a
+	xor a,a
+	ld (ti.curCol),a
+	inc a
 	jr .return
 .exit:
 	xor a,a
+	ld (ti.curCol),a
+	ld hl,(ix+6)
+	ld (hl),a
 .return:
 	ld sp,ix
 	pop ix
@@ -111,37 +127,47 @@ get_user_input:
 
 
 process_command:
-	ld hl,3
-	add hl,sp
-	ld de,(hl)
+	pop hl
+	pop de
 	push de
-	call .skipword
+	push hl
+	push de
+	call command_skipword
+	pop bc
+	or a,a
+	jr z,.no_args
 	xor a,a
+	dec de
 	ld (de),a
 	inc de
-	push de
-	ld de,sys_exec_arguments
+	inc de
+	ld a,(de)
+	or a,a
+	jr z,.no_args
+	push bc
+	ld hl,sys_exec_arguments
+	push hl
 	push de
 	call ti._strcpy
 	pop bc
 	pop bc
+	pop bc
+	jr .exec
+.no_args:
+	xor a,a
+	ld (sys_exec_arguments),a
+.exec:
+	push bc
 	call fs_execute_file
 	pop bc
-	pop bc
 	ret
-.skipword:
+command_skipword:
 	ld a,(de)
 	inc de
-	cp a,$5F
-	jr z,.skipword
-	cp a,$41
-	ret c
-	cp a,$5B
-	jr c,.skipword
-	cp a,$7B
-	ret nc
-	cp a,$61
-	jr nc,.skipword
+	or a,a
+	ret z
+	cp a,' '
+	jr nz,.
 	ret
 
 
